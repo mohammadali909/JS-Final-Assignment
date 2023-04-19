@@ -1,30 +1,48 @@
 const API_KEY = `a90706bdde95d033a8bad18e17a33faf`
-const image_path = `https://image.tmdb.org/t/p/w1280`
 const input = document.querySelector('.search input')
+const main_grid = document.querySelector('.favorites .movies-grid')
+const image_path = `https://image.tmdb.org/t/p/w1280`
 const btn = document.querySelector('.search button')
 const main_grid_title = document.querySelector('.favorites h1')
-const main_grid = document.querySelector('.favorites .movies-grid')
+
 const trending_el = document.querySelector('.trending .movies-grid')
+
 const popup_container = document.querySelector('.popup-container')
+
 function add_click_effect_to_card(cards) {
     cards.forEach(card => {
         card.addEventListener('click', () => show_popup(card))
     })
 }
+
 // SEARCH MOVIES
 async function get_movie_by_search(search_term) {
     const resp = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${search_term}`)
     const respData = await resp.json()
-    
     console.log(respData.results);
     localStorage.setItem("newrespData",JSON.stringify( respData.results));
     const cat = localStorage.getItem("newdata");
     return respData.results
-
 }
 btn.addEventListener('click', add_searched_movies_to_dom)
+
+async function get_movies_from_local_storage(search_term) {
+    const dataFromLocalStorage = JSON.parse(localStorage.getItem('newrespData'));
+    let data = [];
+    data = dataFromLocalStorage.filter((movie) => {
+        const movieTitle = movie.title || movie.name;
+        return movieTitle?.toLowerCase()?.includes(search_term.toLowerCase());
+    })
+    return data;
+}
+
 async function add_searched_movies_to_dom() {
-    const data = await get_movie_by_search(input.value)
+    let data = null;
+    data = await get_movies_from_local_storage(input.value);
+    if (data <= 0) {
+        data = await get_movie_by_search(input.value)
+    }
+
     main_grid_title.innerText = `Search Results...`
     main_grid.innerHTML = data.map(e => {
         return `
@@ -46,9 +64,11 @@ async function add_searched_movies_to_dom() {
             </div>
         `
     }).join('')
+
     const cards = document.querySelectorAll('.card')
     add_click_effect_to_card(cards)
 }
+
 // POPUP
 async function get_movie_by_id(id) {
     const resp = await fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${API_KEY}`)
@@ -58,14 +78,18 @@ async function get_movie_by_id(id) {
 async function get_movie_trailer(id) {
     const resp = await fetch(`https://api.themoviedb.org/3/movie/${id}/videos?api_key=${API_KEY}`)
     const respData = await resp.json()
-    return respData.results[0].key;
+    return respData.results[0].key
 }
+
 async function show_popup(card) {
     popup_container.classList.add('show-popup')
+
     const movie_id = card.getAttribute('data-id')
     const movie = await get_movie_by_id(movie_id)
     const movie_trailer = await get_movie_trailer(movie_id)
+
     popup_container.style.background = `linear-gradient(rgba(0, 0, 0, .8), rgba(0, 0, 0, 1)), url(${image_path + movie.poster_path})`
+
     popup_container.innerHTML = `
             <span class="x-icon">&#10006;</span>
             <div class="content">
@@ -116,17 +140,26 @@ async function show_popup(card) {
     x_icon.addEventListener('click', () => popup_container.classList.remove('show-popup'))
 }
 
-// Trending Movies
-get_trending_movies()
 async function get_trending_movies() {
     const resp = await fetch(`https://api.themoviedb.org/3/trending/all/day?api_key=${API_KEY}`)
     const respData = await resp.json()
     return respData.results
 }
+
 add_to_dom_trending()
+
 async function add_to_dom_trending() {
-    const data = await get_trending_movies()
-    console.log(data);
+
+    let data = null;
+    const dataFromLocalStorage = JSON.parse(localStorage.getItem('newrespData'));
+
+    if (dataFromLocalStorage && dataFromLocalStorage.length > 0) {
+        data = dataFromLocalStorage;
+    } else {
+        data = await get_trending_movies();
+        localStorage.setItem("newrespData", JSON.stringify(data));
+    }
+
     trending_el.innerHTML = data.slice(0, 5).map(e => {
         return `
             <div class="card" data-id="${e.id}">
