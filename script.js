@@ -15,7 +15,12 @@ function add_click_effect_to_card(cards) {
 async function get_movie_by_search(search_term) {
     const resp = await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${API_KEY}&query=${search_term}`)
     const respData = await resp.json()
+    
+    console.log(respData.results);
+    localStorage.setItem("newrespData",JSON.stringify( respData.results));
+    const cat = localStorage.getItem("newdata");
     return respData.results
+
 }
 btn.addEventListener('click', add_searched_movies_to_dom)
 async function add_searched_movies_to_dom() {
@@ -53,7 +58,7 @@ async function get_movie_by_id(id) {
 async function get_movie_trailer(id) {
     const resp = await fetch(`https://api.themoviedb.org/3/movie/${id}/videos?api_key=${API_KEY}`)
     const respData = await resp.json()
-    return respData.results[0].key
+    return respData.results[0].key;
 }
 async function show_popup(card) {
     popup_container.classList.add('show-popup')
@@ -110,19 +115,7 @@ async function show_popup(card) {
     const x_icon = document.querySelector('.x-icon')
     x_icon.addEventListener('click', () => popup_container.classList.remove('show-popup'))
 }
-// Local Storage
-function get_LS() {
-    const movie_ids = JSON.parse(localStorage.getItem('movie-id'))
-    return movie_ids === null ? [] : movie_ids
-}
-function add_to_LS(id) {
-    const movie_ids = get_LS()
-    localStorage.setItem('movie-id', JSON.stringify([...movie_ids, id]))
-}
-function remove_LS(id) {
-    const movie_ids = get_LS()
-    localStorage.setItem('movie-id', JSON.stringify(movie_ids.filter(e => e !== id)))
-}
+
 // Trending Movies
 get_trending_movies()
 async function get_trending_movies() {
